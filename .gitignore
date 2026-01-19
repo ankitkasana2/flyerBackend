@@ -1,0 +1,17 @@
+# Dependency directories
+node_modules/
+
+# Files created by the IDE or OS
+.DS_Store
+
+# Environment variables
+.env
+.env____
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads directory
+uploads/
