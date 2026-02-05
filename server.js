@@ -51,7 +51,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.options("*", cors());
+
 
 /* =======================
    BODY PARSER
