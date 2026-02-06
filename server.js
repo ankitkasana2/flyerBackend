@@ -23,6 +23,7 @@ import { fileURLToPath } from "url";
 dotenv.config();
 
 const app = express();
+app.set("trust proxy", 1);
 
 /* =======================
    ✅ CORRECT CORS CONFIG
@@ -33,8 +34,6 @@ const allowedOrigins = [
   "http://www.grodify.com",
   "https://grodify.com",
   "https://www.grodify.com",
-  "http://3.230.143.50",
-  "http://3.230.143.50:3000",
   "http://localhost:3000"
 ];
 
