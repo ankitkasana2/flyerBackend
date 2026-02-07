@@ -13,7 +13,7 @@ export const createCategory = async (req, res) => {
     }
 
     await db.query(
-      "INSERT INTO categories (name, rank) VALUES (?, ?)",
+      "INSERT INTO categories (name, `rank`) VALUES (?, ?)",
       [name, rank]
     );
 
@@ -27,7 +27,7 @@ export const createCategory = async (req, res) => {
   }
 };
 
-// UPDATE CATEGORY RANK (FROM ADMIN PANEL)
+// UPDATE CATEGORY RANK
 export const updateCategoryRank = async (req, res) => {
   try {
     const { id } = req.params;
@@ -41,7 +41,7 @@ export const updateCategoryRank = async (req, res) => {
     }
 
     const [result] = await db.query(
-      "UPDATE categories SET rank = ?, updated_at = NOW() WHERE id = ?",
+      "UPDATE categories SET `rank` = ?, updated_at = NOW() WHERE id = ?",
       [rank, id]
     );
 
@@ -62,11 +62,11 @@ export const updateCategoryRank = async (req, res) => {
   }
 };
 
-// GET ALL CATEGORIES (SORTED BY RANK FOR FRONTEND)
+// GET ALL CATEGORIES
 export const getCategories = async (req, res) => {
   try {
     const [rows] = await db.query(
-      "SELECT id, name, rank FROM categories ORDER BY rank ASC, name ASC"
+      "SELECT id, name, `rank` FROM categories ORDER BY `rank` ASC, name ASC"
     );
 
     res.json({
