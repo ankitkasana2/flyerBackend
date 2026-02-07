@@ -34,8 +34,13 @@ const allowedOrigins = [
   "http://www.grodify.com",
   "https://grodify.com",
   "https://www.grodify.com",
-  "http://localhost:3000"
+  "http://localhost:3000",
+
+  // ADMIN PANEL
+  "http://3.230.143.50:3008",
+  "https://admin.grodify.com"
 ];
+
 
 app.use(cors({
   origin: (origin, callback) => {
