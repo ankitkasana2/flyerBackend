@@ -36,24 +36,31 @@ const allowedOrigins = [
   "https://www.grodify.com",
   "http://localhost:3000",
 
-  // ADMIN PANEL
+  // ADMIN
   "http://3.230.143.50:3008",
   "https://admin.grodify.com"
 ];
 
-
 app.use(cors({
   origin: (origin, callback) => {
+    // allow server-to-server or postman
     if (!origin) return callback(null, true);
+
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error("CORS not allowed"), false);
+
+    console.log("❌ Blocked by CORS:", origin);
+    return callback(new Error("CORS not allowed"));
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
+
+// VERY IMPORTANT for preflight
+app.options("*", cors());
+
 
 
 
