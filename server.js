@@ -59,7 +59,7 @@ app.use(cors({
 }));
 
 // VERY IMPORTANT for preflight
-app.options("*", cors());
+// app.options("*", cors());
 
 
 
