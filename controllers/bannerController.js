@@ -266,7 +266,7 @@ export const getBanners = async (req, res) => {
     const [rows] = await db.execute(query, params);
 
     // Format response with full image URLs
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3007';
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
     const formatted = rows.map(banner => ({
       ...banner,
       image_url: banner.image ? `${baseUrl}/uploads/banners/${banner.image}` : null,
@@ -310,7 +310,7 @@ export const getBannerById = async (req, res) => {
       });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3007';
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
     const banner = {
       ...rows[0],
       image_url: rows[0].image ? `${baseUrl}/uploads/banners/${rows[0].image}` : null,
