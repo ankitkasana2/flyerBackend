@@ -35,6 +35,9 @@ export const upload = multer({
  * POST /api/banners/create
  */
 export const createBanner = async (req, res) => {
+  console.log("--- Create Banner Start ---");
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
   try {
     const {
       title,
@@ -266,7 +269,7 @@ export const getBanners = async (req, res) => {
     const [rows] = await db.execute(query, params);
 
     // Format response with full image URLs
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const formatted = rows.map(banner => ({
       ...banner,
       image_url: banner.image ? `${baseUrl}/uploads/banners/${banner.image}` : null,
@@ -310,7 +313,7 @@ export const getBannerById = async (req, res) => {
       });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const banner = {
       ...rows[0],
       image_url: rows[0].image ? `${baseUrl}/uploads/banners/${rows[0].image}` : null,
