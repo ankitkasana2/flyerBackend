@@ -5,11 +5,10 @@ import crypto from "crypto";
 import fs from "fs";
 
 // Multer config for image upload
-const uploadPath = path.join(process.cwd(), "uploads", "banners");
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    const uploadPath = "uploads/banners";
+    if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
@@ -97,18 +96,10 @@ export const createBanner = async (req, res) => {
       [result.insertId]
     );
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const formattedBanner = {
-      ...banners[0],
-      image_url: banners[0].image ? `${baseUrl}/uploads/banners/${banners[0].image}` : null,
-      button_enabled: !!banners[0].button_enabled,
-      status: !!banners[0].status
-    };
-
     res.status(201).json({
       success: true,
       message: "Banner created successfully",
-      data: formattedBanner
+      data: banners[0]
     });
 
   } catch (err) {
@@ -175,9 +166,9 @@ export const updateBanner = async (req, res) => {
       // Delete old image
       const oldImage = existing[0].image;
       if (oldImage) {
-        const oldImagePath = path.join(uploadPath, oldImage);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+        const oldPath = path.join("uploads/banners", oldImage);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
         }
       }
     }
@@ -237,18 +228,10 @@ export const updateBanner = async (req, res) => {
       [id]
     );
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const formattedBanner = {
-      ...updated[0],
-      image_url: updated[0].image ? `${baseUrl}/uploads/banners/${updated[0].image}` : null,
-      button_enabled: !!updated[0].button_enabled,
-      status: !!updated[0].status
-    };
-
     res.json({
       success: true,
       message: "Banner updated successfully",
-      data: formattedBanner
+      data: updated[0]
     });
 
   } catch (err) {
@@ -283,7 +266,7 @@ export const getBanners = async (req, res) => {
     const [rows] = await db.execute(query, params);
 
     // Format response with full image URLs
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
     const formatted = rows.map(banner => ({
       ...banner,
       image_url: banner.image ? `${baseUrl}/uploads/banners/${banner.image}` : null,
@@ -327,7 +310,7 @@ export const getBannerById = async (req, res) => {
       });
     }
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3007';
     const banner = {
       ...rows[0],
       image_url: rows[0].image ? `${baseUrl}/uploads/banners/${rows[0].image}` : null,
@@ -377,9 +360,9 @@ export const deleteBanner = async (req, res) => {
     // Delete image file
     const image = existing[0].image;
     if (image) {
-      const imageFilePath = path.join(uploadPath, image);
-      if (fs.existsSync(imageFilePath)) {
-        fs.unlinkSync(imageFilePath);
+      const imagePath = path.join("uploads/banners", image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
       }
     }
 
