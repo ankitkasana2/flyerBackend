@@ -269,10 +269,15 @@ export const getBanners = async (req, res) => {
     const [rows] = await db.execute(query, params);
 
     // Format response with full image URLs
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    let baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+    // Force HTTPS if on production domain to avoid Mixed Content errors
+    if (req.get('host').includes('grodify.com') && !baseUrl.startsWith('https')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
     const formatted = rows.map(banner => ({
       ...banner,
-      image_url: banner.image ? `${baseUrl}/uploads/banners/${banner.image}` : null,
+      image_url: banner.image ? `${baseUrl}/api/uploads/banners/${banner.image}` : null,
       button_enabled: !!banner.button_enabled,
       status: !!banner.status
     }));
@@ -313,10 +318,16 @@ export const getBannerById = async (req, res) => {
       });
     }
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    // Format response with full image URLs
+    let baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+    // Force HTTPS if on production domain to avoid Mixed Content errors
+    if (baseUrl.includes('grodify.com') && !baseUrl.startsWith('https')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
     const banner = {
       ...rows[0],
-      image_url: rows[0].image ? `${baseUrl}/uploads/banners/${rows[0].image}` : null,
+      image_url: rows[0].image ? `${baseUrl}/api/uploads/banners/${rows[0].image}` : null,
       button_enabled: !!rows[0].button_enabled,
       status: !!rows[0].status
     };

@@ -54,8 +54,8 @@ app.use(cors({
     return callback(new Error("CORS not allowed"));
   },
   credentials: true,
-  methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"]
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // VERY IMPORTANT for preflight
@@ -101,7 +101,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/banners", bannerRoutes); // <-- add this
 
 // Serve uploads folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
