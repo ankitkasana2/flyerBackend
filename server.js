@@ -30,36 +30,32 @@ app.set("trust proxy", 1);
 ======================= */
 
 const allowedOrigins = [
+  "https://admin.grodify.com",
+  "https://grodify.com",
+  "http://localhost:3000",
+  "http://localhost:3001",
   "http://grodify.com",
   "http://www.grodify.com",
-  "https://grodify.com",
   "https://www.grodify.com",
-  "http://localhost:3000",
-
-  // ADMIN
-  "http://3.230.143.50:3008",
-  "https://admin.grodify.com"
+  "http://3.230.143.50:3008"
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // allow server-to-server or postman
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    console.log("❌ Blocked by CORS:", origin);
-    return callback(new Error("CORS not allowed"));
-  },
-  credentials: true,
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// VERY IMPORTANT for preflight
-// app.options("*", cors());
+// Manual Header Fallback (requested by user)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  next();
+});
+
+// IMPORTANT for preflight
+app.options("*", cors());
 
 
 
