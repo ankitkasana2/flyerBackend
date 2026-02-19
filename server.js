@@ -26,7 +26,7 @@ const app = express();
 app.set("trust proxy", 1);
 
 /* =======================
-   ✅ CORRECT CORS CONFIG
+   ✅ CORRECT CORS CONFIG Added 
 ======================= */
 
 const allowedOrigins = [
