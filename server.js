@@ -46,16 +46,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Manual Header Fallback (requested by user)
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  next();
-});
-
 // IMPORTANT for preflight
-app.options("*", cors());
+app.options(/.*/, cors());
 
 
 
@@ -93,7 +85,7 @@ app.use("/api/orders", ordersRoutes); // <-- mount orders route
 // Cart Api
 app.use("/api/cart", cartRoutes);
 
-// banner api 
+// banner api
 app.use("/api/banners", bannerRoutes); // <-- add this
 
 // Serve uploads folder
@@ -132,4 +124,3 @@ app.get("/", (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
