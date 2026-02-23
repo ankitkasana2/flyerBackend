@@ -309,6 +309,8 @@ const normalizeDeliveryTime = (v) => {
 // };
 
 export const createOrder = async (req, res) => {
+    console.log("🔥 CREATE ORDER HIT!")  // ← ANDAR
+  console.log("Body keys:", Object.keys(req.body))  // ← ANDAR
   const normalizeDeliveryTime = (value) => {
     if (!value) return null;
     const v = String(value).trim().toLowerCase();
@@ -386,34 +388,36 @@ export const createOrder = async (req, res) => {
     };
 
     // FILE HANDLING — MATCH POSTMAN FIELD NAMES
-    let venueLogoPath = null;
-    if (files.venue_logo) {
-      venueLogoPath = renameTo(
-        files.venue_logo,
-        DIRS_EXPORT.venue_logo,
-        "venue"
-      );
-    }
+   let venueLogoPath = null;
+if (files.venue_logo) {
+  venueLogoPath = renameTo(files.venue_logo, DIRS_EXPORT.venue_logo, "venue");
+} else if (b.venue_logo_url) {
+  venueLogoPath = b.venue_logo_url; // Library URL directly save
+}
 
     // DJs
-    const djs = [];
-    const djsArray = JSON.parse(b.djs || "[]");
-    djsArray.forEach((dj, i) => {
-      const file = files[`dj_${i}`];
-      const image = file
-        ? renameTo(file, DIRS_EXPORT.djs, `dj_${i + 1}`)
-        : null;
-      djs.push({ name: dj.name || "", image });
-    });
+   // DJs - NAYA (file + library URL dono handle)
+const djs = [];
+const djsArray = JSON.parse(b.djs || "[]");
+djsArray.forEach((dj, i) => {
+  const file = files[`dj_${i}`];
+  const urlFromLibrary = b[`dj_url_${i}`] || null;
+
+  const image = file
+    ? renameTo(file, DIRS_EXPORT.djs, `dj_${i + 1}`)
+    : urlFromLibrary;
+  djs.push({ name: dj.name || "", image });
+});
 
     // Host
     const hostRaw = JSON.parse(b.host || "{}");
-    const host = {
-      name: hostRaw.name || "",
-      image: files.host_file
-        ? renameTo(files.host_file, DIRS_EXPORT.host, "host")
-        : null,
-    };
+  // NAYA:
+const host = {
+  name: hostRaw.name || "",
+  image: files.host_file
+    ? renameTo(files.host_file, DIRS_EXPORT.host, "host")
+    : b.host_url_0 || null,  // ← Library URL fallback
+};
 
     // // Sponsors
     // const sponsors = [];
@@ -422,14 +426,15 @@ export const createOrder = async (req, res) => {
     //   const image = file ? renameTo(file, DIRS_EXPORT.sponsors, `sponsor_${i}`) : null;
     //   sponsors.push({ name: null, image });
     // }
-    const sponsors = [];
-    for (let i = 0; i < 3; i++) {
-      const file = files[`sponsor_${i}`];
-      const image = file
-        ? renameTo(file, DIRS_EXPORT.sponsors, `sponsor_${i + 1}`)
-        : null;
-      sponsors.push({ name: null, image });
-    }
+   const sponsors = [];
+for (let i = 0; i < 3; i++) {
+  const file = files[`sponsor_${i}`];
+  const urlFromLibrary = b[`sponsor_url_${i}`] || null;
+  const image = file
+    ? renameTo(file, DIRS_EXPORT.sponsors, `sponsor_${i + 1}`)
+    : urlFromLibrary; // File nahi to library URL use karo
+  sponsors.push({ name: null, image });
+}
 
     // UPDATE ORDER WITH MEDIA
     await db.query(
