@@ -38,6 +38,22 @@ const serverError = (res, error, msg = "Server Error") => {
   return res.status(500).json({ message: msg });
 };
 
+const getJwtUser = (req) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+
+  if (!token) {
+    return { ok: false, status: 401, message: "Authorization token missing" };
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return { ok: true, decoded };
+  } catch (error) {
+    return { ok: false, status: 401, message: "Invalid or expired token" };
+  }
+};
+
 // // 🟢 REGISTER Web User
 // export const registerWebUser = async (req, res) => {
 //   try {
@@ -226,5 +242,141 @@ export const loginWebUser = async (req, res) => {
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+// UPDATE PROFILE (fullname/email)
+export const updateWebUserProfile = async (req, res) => {
+  try {
+    const auth = getJwtUser(req);
+    if (!auth.ok) {
+      return res.status(auth.status).json({ success: false, message: auth.message });
+    }
+
+    const userId = auth.decoded?.id;
+    const { fullname, email } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Invalid token payload" });
+    }
+
+    if (!fullname || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "fullname and email are required",
+      });
+    }
+
+    const [emailRows] = await db.query(
+      "SELECT id FROM web_users WHERE email = ? AND id != ? LIMIT 1",
+      [email, userId]
+    );
+
+    if (emailRows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Email is already used by another account",
+      });
+    }
+
+    await db.query(
+      "UPDATE web_users SET fullname = ?, email = ? WHERE id = ?",
+      [fullname, email, userId]
+    );
+
+    const [rows] = await db.query(
+      "SELECT id, user_id, fullname, email FROM web_users WHERE id = ? LIMIT 1",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const user = rows[0];
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        user_id: user.user_id,
+        fullname: user.fullname,
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      token,
+      user,
+    });
+  } catch (error) {
+    return serverError(res, error, "Failed to update profile");
+  }
+};
+
+// CHANGE PASSWORD
+export const changeWebUserPassword = async (req, res) => {
+  try {
+    const auth = getJwtUser(req);
+    if (!auth.ok) {
+      return res.status(auth.status).json({ success: false, message: auth.message });
+    }
+
+    const userId = auth.decoded?.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Invalid token payload" });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "currentPassword and newPassword are required",
+      });
+    }
+
+    if (String(newPassword).length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 8 characters long",
+      });
+    }
+
+    const [rows] = await db.query(
+      "SELECT id, password FROM web_users WHERE id = ? LIMIT 1",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const user = rows[0];
+
+    // For social users with NULL password, force them to set first password by sending currentPassword as account email.
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is not set for this account. Use forgot password flow first.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query("UPDATE web_users SET password = ? WHERE id = ?", [hashedPassword, userId]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    return serverError(res, error, "Failed to change password");
   }
 };

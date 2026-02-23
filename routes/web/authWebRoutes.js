@@ -1,5 +1,10 @@
 import express from "express";
-import { loginWebUser, registerWebUser } from "../../controllers/web/authWebController.js";
+import {
+  loginWebUser,
+  registerWebUser,
+  updateWebUserProfile,
+  changeWebUserPassword,
+} from "../../controllers/web/authWebController.js";
 
 // Optional middlewares
 import rateLimit from "express-rate-limit";
@@ -25,6 +30,12 @@ router.post("/register", webAuthLimiter, registerWebUser);
 
 // Login Web User
 router.post("/login", webAuthLimiter, loginWebUser);
+
+// Update logged-in user profile
+router.patch("/profile", webAuthLimiter, updateWebUserProfile);
+
+// Change logged-in user password
+router.patch("/change-password", webAuthLimiter, changeWebUserPassword);
 
 // Future routes
 // router.post("/logout", verifyToken, logoutWebUser);
