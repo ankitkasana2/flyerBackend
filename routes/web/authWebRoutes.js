@@ -5,7 +5,7 @@ import {
   updateWebUserProfile,
   changeWebUserPassword,
 } from "../../controllers/web/authWebController.js";
-
+import { checkEmail } from "../../controllers/authController.js";
 // Optional middlewares
 import rateLimit from "express-rate-limit";
 // import { verifyToken } from "../../middleware/authMiddleware.js";
@@ -25,6 +25,7 @@ const webAuthLimiter = rateLimit({
  * POST /api/web/auth/login     → Login web user
  */
 
+router.post("/check-email", checkEmail);
 // Register Web User
 router.post("/register", webAuthLimiter, registerWebUser);
 
