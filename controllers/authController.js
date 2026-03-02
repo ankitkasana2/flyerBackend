@@ -90,3 +90,18 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
+
+export const checkEmail = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ exists: false })
+  try {
+    const [rows] = await db.query(
+      "SELECT id FROM web_users WHERE email = ? LIMIT 1",
+      [email]
+    )
+    return res.json({ exists: rows.length > 0 })
+  } catch (error) {
+    return res.status(500).json({ exists: false })
+  }
+};
