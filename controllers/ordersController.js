@@ -417,6 +417,9 @@ const host = {
   image: files.host_file
     ? renameTo(files.host_file, DIRS_EXPORT.host, "host")
     : b.host_url_0 || null,  // ← Library URL fallback
+  birthday_person_photo: files.birthday_person_photo
+    ? renameTo(files.birthday_person_photo, DIRS_EXPORT.host, "birthday_person")
+    : b.birthday_person_photo_url || null,
 };
 
     // // Sponsors
