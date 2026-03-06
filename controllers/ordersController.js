@@ -391,8 +391,8 @@ export const createOrder = async (req, res) => {
    let venueLogoPath = null;
 if (files.venue_logo) {
   venueLogoPath = renameTo(files.venue_logo, DIRS_EXPORT.venue_logo, "venue");
-} else if (b.venue_logo_url) {
-  venueLogoPath = b.venue_logo_url; // Library URL directly save
+} else if (b.venue_logo_url || b.venue_logo) {
+  venueLogoPath = b.venue_logo_url || b.venue_logo; // URL fallback for both fields
 }
 
     // DJs
@@ -401,7 +401,7 @@ const djs = [];
 const djsArray = JSON.parse(b.djs || "[]");
 djsArray.forEach((dj, i) => {
   const file = files[`dj_${i}`];
-  const urlFromLibrary = b[`dj_url_${i}`] || null;
+  const urlFromLibrary = b[`dj_url_${i}`] || dj?.image_url || dj?.image || null;
 
   const image = file
     ? renameTo(file, DIRS_EXPORT.djs, `dj_${i + 1}`)
@@ -411,12 +411,13 @@ djsArray.forEach((dj, i) => {
 
     // Host
     const hostRaw = JSON.parse(b.host || "{}");
+    const hostPrimary = Array.isArray(hostRaw) ? (hostRaw[0] || {}) : (hostRaw || {});
   // NAYA:
 const host = {
-  name: hostRaw.name || "",
+  name: hostPrimary.name || "",
   image: files.host_file
     ? renameTo(files.host_file, DIRS_EXPORT.host, "host")
-    : b.host_url_0 || null,  // ← Library URL fallback
+    : b.host_url_0 || (hostPrimary?.image_url ?? hostPrimary?.image ?? null),  // ← Library URL fallback
   birthday_person_photo: files.birthday_person_photo
     ? renameTo(files.birthday_person_photo, DIRS_EXPORT.host, "birthday_person")
     : b.birthday_person_photo_url || null,
@@ -432,7 +433,15 @@ const host = {
    const sponsors = [];
 for (let i = 0; i < 3; i++) {
   const file = files[`sponsor_${i}`];
-  const urlFromLibrary = b[`sponsor_url_${i}`] || null;
+  const sponsorFromBody = (() => {
+    try {
+      const sponsorsFromBody = JSON.parse(b.sponsors || "[]");
+      return sponsorsFromBody?.[i]?.image_url || sponsorsFromBody?.[i]?.image || null;
+    } catch {
+      return null;
+    }
+  })();
+  const urlFromLibrary = b[`sponsor_url_${i}`] || sponsorFromBody || null;
   const image = file
     ? renameTo(file, DIRS_EXPORT.sponsors, `sponsor_${i + 1}`)
     : urlFromLibrary; // File nahi to library URL use karo
