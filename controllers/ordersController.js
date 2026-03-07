@@ -3,6 +3,48 @@ import path from "path";
 import fs from "fs";
 import { DIRS_EXPORT, renameFile } from "../middleware/upload.js";
 import { createNotification } from "../controllers/notificationController.js";
+
+const normalizeStoredMediaUrl = (value) => {
+  if (!value || typeof value !== "string") return value;
+  const raw = value.trim();
+  if (!raw) return raw;
+
+  const normalizePath = (p) => {
+    if (p.startsWith("/api/uploads/")) return p;
+    if (p.startsWith("/uploads/")) return `/api${p}`;
+    if (p.startsWith("uploads/")) return `/api/${p}`;
+    return p;
+  };
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      parsed.pathname = normalizePath(parsed.pathname);
+      return parsed.toString();
+    } catch {
+      return raw;
+    }
+  }
+
+  return normalizePath(raw);
+};
+
+const normalizeMediaEntity = (entity) => {
+  if (!entity || typeof entity !== "object") return entity;
+  const normalized = { ...entity };
+
+  if (typeof normalized.image === "string") {
+    normalized.image = normalizeStoredMediaUrl(normalized.image);
+  }
+  if (typeof normalized.image_url === "string") {
+    normalized.image_url = normalizeStoredMediaUrl(normalized.image_url);
+  }
+  if (typeof normalized.birthday_person_photo === "string") {
+    normalized.birthday_person_photo = normalizeStoredMediaUrl(normalized.birthday_person_photo);
+  }
+
+  return normalized;
+};
 // // ---------------------------
 // // GET All Orders
 // // ---------------------------
@@ -13,12 +55,19 @@ export const getOrders = async (req, res) => {
     );
 
     // Parse JSON fields for DJs, host, sponsors
-    const formatted = rows.map((order) => ({
-      ...order,
-      djs: order.djs ? JSON.parse(order.djs) : [],
-      host: order.host ? JSON.parse(order.host) : {},
-      sponsors: order.sponsors ? JSON.parse(order.sponsors) : [],
-    }));
+    const formatted = rows.map((order) => {
+      const djs = order.djs ? JSON.parse(order.djs) : [];
+      const host = order.host ? JSON.parse(order.host) : {};
+      const sponsors = order.sponsors ? JSON.parse(order.sponsors) : [];
+
+      return {
+        ...order,
+        venue_logo: normalizeStoredMediaUrl(order.venue_logo),
+        djs: Array.isArray(djs) ? djs.map(normalizeMediaEntity) : [],
+        host: normalizeMediaEntity(host),
+        sponsors: Array.isArray(sponsors) ? sponsors.map(normalizeMediaEntity) : [],
+      };
+    });
 
     res.status(200).json({ orders: formatted });
   } catch (error) {
@@ -76,11 +125,16 @@ export const getOrderById = async (req, res) => {
       }
     };
 
+    const parsedDjs = safeParse(order.djs);
+    const parsedHost = safeParse(order.host);
+    const parsedSponsors = safeParse(order.sponsors);
+
     const formattedOrder = {
       ...order,
-      djs: safeParse(order.djs),
-      host: safeParse(order.host),
-      sponsors: safeParse(order.sponsors),
+      venue_logo: normalizeStoredMediaUrl(order.venue_logo),
+      djs: Array.isArray(parsedDjs) ? parsedDjs.map(normalizeMediaEntity) : [],
+      host: normalizeMediaEntity(parsedHost),
+      sponsors: Array.isArray(parsedSponsors) ? parsedSponsors.map(normalizeMediaEntity) : [],
       flyer: {
         id: order.flyer_is,
         title: order.flyer_title || "Unknown Flyer",
@@ -159,12 +213,19 @@ export const getOrdersByUser = async (req, res) => {
       });
     }
 
-    const formatted = rows.map((order) => ({
-      ...order,
-      djs: order.djs ? JSON.parse(order.djs) : [],
-      host: order.host ? JSON.parse(order.host) : {},
-      sponsors: order.sponsors ? JSON.parse(order.sponsors) : [],
-    }));
+    const formatted = rows.map((order) => {
+      const djs = order.djs ? JSON.parse(order.djs) : [];
+      const host = order.host ? JSON.parse(order.host) : {};
+      const sponsors = order.sponsors ? JSON.parse(order.sponsors) : [];
+
+      return {
+        ...order,
+        venue_logo: normalizeStoredMediaUrl(order.venue_logo),
+        djs: Array.isArray(djs) ? djs.map(normalizeMediaEntity) : [],
+        host: normalizeMediaEntity(host),
+        sponsors: Array.isArray(sponsors) ? sponsors.map(normalizeMediaEntity) : [],
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -380,7 +441,7 @@ export const createOrder = async (req, res) => {
         fs.copyFileSync(fileObj.path, newPath);
         fs.unlinkSync(fileObj.path); // delete temp file
 
-        return `/uploads/${path.basename(folder)}/${newName}`;
+        return `/api/uploads/${path.basename(folder)}/${newName}`;
       } catch (err) {
         console.error("File save failed:", err.message);
         return null;
@@ -392,7 +453,7 @@ export const createOrder = async (req, res) => {
 if (files.venue_logo) {
   venueLogoPath = renameTo(files.venue_logo, DIRS_EXPORT.venue_logo, "venue");
 } else if (b.venue_logo_url || b.venue_logo) {
-  venueLogoPath = b.venue_logo_url || b.venue_logo; // URL fallback for both fields
+  venueLogoPath = normalizeStoredMediaUrl(b.venue_logo_url || b.venue_logo); // URL fallback for both fields
 }
 
     // DJs
@@ -405,7 +466,7 @@ djsArray.forEach((dj, i) => {
 
   const image = file
     ? renameTo(file, DIRS_EXPORT.djs, `dj_${i + 1}`)
-    : urlFromLibrary;
+    : normalizeStoredMediaUrl(urlFromLibrary);
   djs.push({ name: dj.name || "", image });
 });
 
@@ -417,10 +478,10 @@ const host = {
   name: hostPrimary.name || "",
   image: files.host_file
     ? renameTo(files.host_file, DIRS_EXPORT.host, "host")
-    : b.host_url_0 || (hostPrimary?.image_url ?? hostPrimary?.image ?? null),  // ← Library URL fallback
+    : normalizeStoredMediaUrl(b.host_url_0 || (hostPrimary?.image_url ?? hostPrimary?.image ?? null)),
   birthday_person_photo: files.birthday_person_photo
     ? renameTo(files.birthday_person_photo, DIRS_EXPORT.host, "birthday_person")
-    : b.birthday_person_photo_url || null,
+    : normalizeStoredMediaUrl(b.birthday_person_photo_url || null),
 };
 
     // // Sponsors
@@ -444,7 +505,7 @@ for (let i = 0; i < 3; i++) {
   const urlFromLibrary = b[`sponsor_url_${i}`] || sponsorFromBody || null;
   const image = file
     ? renameTo(file, DIRS_EXPORT.sponsors, `sponsor_${i + 1}`)
-    : urlFromLibrary; // File nahi to library URL use karo
+    : normalizeStoredMediaUrl(urlFromLibrary); // File nahi to library URL use karo
   sponsors.push({ name: null, image });
 }
 
@@ -471,9 +532,10 @@ for (let i = 0; i < 3; i++) {
       orderId,
     ]);
     const order = rows[0];
-    order.djs = JSON.parse(order.djs || "[]");
-    order.host = JSON.parse(order.host || "{}");
-    order.sponsors = JSON.parse(order.sponsors || "[]");
+    order.venue_logo = normalizeStoredMediaUrl(order.venue_logo);
+    order.djs = (JSON.parse(order.djs || "[]") || []).map(normalizeMediaEntity);
+    order.host = normalizeMediaEntity(JSON.parse(order.host || "{}"));
+    order.sponsors = (JSON.parse(order.sponsors || "[]") || []).map(normalizeMediaEntity);
 
     res.status(201).json({ message: "Order created successfully!", order });
   } catch (error) {
