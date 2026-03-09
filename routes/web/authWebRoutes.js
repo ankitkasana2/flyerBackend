@@ -4,6 +4,7 @@ import {
   registerWebUser,
   updateWebUserProfile,
   changeWebUserPassword,
+  getAllWebUsers,
 } from "../../controllers/web/authWebController.js";
 import { checkEmail } from "../../controllers/authController.js";
 // Optional middlewares
@@ -37,7 +38,8 @@ router.patch("/profile", webAuthLimiter, updateWebUserProfile);
 
 // Change logged-in user password
 router.patch("/change-password", webAuthLimiter, changeWebUserPassword);
-
+// Get all registered users (Admin)
+router.get("/users", getAllWebUsers);
 // Future routes
 // router.post("/logout", verifyToken, logoutWebUser);
 // router.post("/refresh-token", refreshToken);
