@@ -382,3 +382,56 @@ export const changeWebUserPassword = async (req, res) => {
 };
 
 
+// ADD THIS FUNCTION to controllers/web/authWebController.js
+
+// GET ALL REGISTERED USERS (Admin only)
+export const getAllWebUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+    const offset = (page - 1) * limit;
+
+    let whereClause = '';
+    let queryParams = [];
+
+    if (search) {
+      whereClause = 'WHERE fullname LIKE ? OR email LIKE ? OR user_id LIKE ?';
+      queryParams = [`%${search}%`, `%${search}%`, `%${search}%`];
+    }
+
+    const [users] = await db.query(
+      `SELECT id, fullname, email, user_id, created_at 
+       FROM web_users 
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
+    );
+
+    const [countResult] = await db.query(
+      `SELECT COUNT(*) as total FROM web_users ${whereClause}`,
+      queryParams
+    );
+
+    const total = countResult[0].total;
+
+    return res.status(200).json({
+      success: true,
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    });
+  } catch (error) {
+    console.error("Get users error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
