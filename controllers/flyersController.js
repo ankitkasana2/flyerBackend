@@ -13,34 +13,15 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 // ---------------------------
 export const getFlyers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 30;
-    const offset = (page - 1) * limit;
+    const [rows] = await db.query("SELECT * FROM flyers ORDER BY created_at DESC");
 
-    // Total count
-    const [[{ total }]] = await db.query("SELECT COUNT(*) as total FROM flyers");
-
-    // Paginated flyers
-const [rows] = await db.query(
-  `SELECT id, title, price, form_type, recently_added, 
-   categories, image_url, file_name_original 
-   FROM flyers ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-  [limit, offset]
-);
     const formatted = rows.map((f) => ({
       ...f,
       categories: f.categories ? JSON.parse(f.categories) : [],
       recentlyAdded: !!f.recently_added,
     }));
 
-    res.json({
-      flyers: formatted,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit)
-    });
-
+    res.json(formatted);
   } catch (err) {
     console.error("Error fetching flyers:", err);
     res.status(500).json({ message: "Server error", error: err.message });

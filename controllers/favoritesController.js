@@ -114,37 +114,3 @@ export const getUserFavorites = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
-
-
-// GET TOP FLYERS — purchases + favorites count
-export const getTopFlyers = async (req, res) => {
-  try {
-    const [rows] = await db.query(`
-      SELECT 
-        f.id,
-        f.title,
-        f.image_url,
-        COUNT(DISTINCT o.id) as purchases,
-        COUNT(DISTINCT fav.id) as favorites
-      FROM flyers f
-      LEFT JOIN flyer_orders o ON o.flyer_is = f.id
-      LEFT JOIN flyer_favorites fav ON fav.flyer_id = f.id
-      GROUP BY f.id, f.title, f.image_url
-      ORDER BY (purchases + favorites) DESC
-      LIMIT 10
-    `);
-
-    return res.status(200).json({
-      success: true,
-      topFlyers: rows
-    });
-  } catch (error) {
-    console.error("Get top flyers error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-};
