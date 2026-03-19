@@ -11,6 +11,7 @@ import { checkEmail } from "../../controllers/authController.js";
 import rateLimit from "express-rate-limit";
 // import { verifyToken } from "../../middleware/authMiddleware.js";
 
+import { getUserStats } from "../../controllers/web/authWebController.js";
 const router = express.Router();
 
 // Rate limiter to protect web auth routes
@@ -40,6 +41,11 @@ router.patch("/profile", webAuthLimiter, updateWebUserProfile);
 router.patch("/change-password", webAuthLimiter, changeWebUserPassword);
 // Get all registered users (Admin)
 router.get("/users", getAllWebUsers);
+
+
+
+
+router.get("/user-stats", getUserStats);
 // Future routes
 // router.post("/logout", verifyToken, logoutWebUser);
 // router.post("/refresh-token", refreshToken);

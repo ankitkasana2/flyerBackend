@@ -435,3 +435,44 @@ export const getAllWebUsers = async (req, res) => {
     });
   }
 };
+
+
+
+// GET USERS STATS FOR DASHBOARD
+export const getUserStats = async (req, res) => {
+  try {
+    // Total users
+    const [total] = await db.query(
+      "SELECT COUNT(*) as total FROM web_users"
+    );
+
+    // New users today
+    const [today] = await db.query(
+      "SELECT COUNT(*) as total FROM web_users WHERE DATE(created_at) = CURDATE()"
+    );
+
+    // New users this week
+    const [week] = await db.query(
+      "SELECT COUNT(*) as total FROM web_users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
+    );
+
+    // New users this month
+    const [month] = await db.query(
+      "SELECT COUNT(*) as total FROM web_users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
+    );
+
+    return res.status(200).json({
+      success: true,
+      totalUsers: total[0].total,
+      newToday: today[0].total,
+      newThisWeek: week[0].total,
+      newThisMonth: month[0].total,
+    });
+  } catch (error) {
+    console.error("Get user stats error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
