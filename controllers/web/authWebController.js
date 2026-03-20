@@ -382,3 +382,79 @@ export const changeWebUserPassword = async (req, res) => {
 };
 
 
+// GET ALL WEB USERS (FOR ADMIN PANEL)
+export const getAllWebUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || "";
+    const offset = (page - 1) * limit;
+
+    let whereClause = "";
+    let params = [];
+
+    if (search) {
+      whereClause = "WHERE email LIKE ? OR fullname LIKE ? OR user_id LIKE ?";
+      params = [`%${search}%`, `%${search}%`, `%${search}%`];
+    }
+
+    const [countRows] = await db.query(
+      `SELECT COUNT(*) as total FROM web_users ${whereClause}`,
+      params
+    );
+    const total = countRows[0].total;
+
+    const [rows] = await db.query(
+      `SELECT id, fullname, email, user_id, created_at 
+       FROM web_users ${whereClause} 
+       ORDER BY created_at DESC 
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    return res.status(200).json({
+      success: true,
+      users: rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Get web users error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
+// GET USER STATS FOR DASHBOARD
+export const getWebUserStats = async (req, res) => {
+  try {
+    // Total users
+    const [totalRows] = await db.query(
+      "SELECT COUNT(*) as total FROM web_users"
+    );
+
+    // New users this month
+    const [monthRows] = await db.query(
+      `SELECT COUNT(*) as newThisMonth FROM web_users 
+       WHERE MONTH(created_at) = MONTH(CURDATE()) 
+       AND YEAR(created_at) = YEAR(CURDATE())`
+    );
+
+    return res.status(200).json({
+      success: true,
+      totalUsers: totalRows[0].total,
+      newThisMonth: monthRows[0].newThisMonth
+    });
+
+  } catch (error) {
+    console.error("User stats error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
