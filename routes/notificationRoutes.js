@@ -7,8 +7,9 @@ import {
 
 const router = express.Router();
 
+// ✅ FIXED - specific route first
 router.get("/", getNotifications);
-router.patch("/:id/read", markNotificationRead);
-router.patch("/read-all", markAllRead);
+router.patch("/read-all", markAllRead);            // ← move this UP
+router.patch("/:id/read", markNotificationRead); 
 
 export default router;

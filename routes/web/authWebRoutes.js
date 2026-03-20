@@ -4,6 +4,8 @@ import {
   registerWebUser,
   updateWebUserProfile,
   changeWebUserPassword,
+  getAllWebUsers,
+  getWebUserStats,    // ← yeh add karo
 } from "../../controllers/web/authWebController.js";
 import { checkEmail } from "../../controllers/authController.js";
 // Optional middlewares
@@ -38,6 +40,15 @@ router.patch("/profile", webAuthLimiter, updateWebUserProfile);
 // Change logged-in user password
 router.patch("/change-password", webAuthLimiter, changeWebUserPassword);
 
+
+
+// Yeh line add karo
+router.get("/user-stats", getWebUserStats);   // ← add karo
+router.get("/users", getAllWebUsers);
+
+
+// Yeh line add karo existing routes ke saath
+router.get("/users", getAllWebUsers);   // ← yeh add karo
 // Future routes
 // router.post("/logout", verifyToken, logoutWebUser);
 // router.post("/refresh-token", refreshToken);
